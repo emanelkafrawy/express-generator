@@ -1,48 +1,79 @@
 const express = require('express');
 const bodyparser = require('body-parser');
+const mongoose = require('mongoose');
 
+const Dishes = require('../models/dishes');
 
 const dishrouter = express.Router();
 
 dishrouter.use(bodyparser.json());
 
 dishrouter.route('/')
-.all((req,res,next)=>{ //for all the requests, no matter method is invoked 
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/plain'); //plaintext back to the client
-    next();
-
-})//callback function 
 .get((req,res,next)=>{
-    res.end("will send all the dishes to you!");
+    Dishes.find({})
+    .then((dishes) => {//handling
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dishes);//send it back to the server
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
-.post((req,res,next)=>{
-    res.end("will add the dishes " + req.body.name +
-    "with details: " + req.body.description);
+.post((req, res, next) => {
+    Dishes.create(req.body)
+    .then((dish) => {
+        console.log('Dish Created ', dish);
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dishes);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 .put((req,res,next)=>{
     res.statusCode = 403;   //means operation is not suported  
     res.end("put operation not supported on dishes");
 })
 .delete((req,res,next)=>{
-    res.end("deleting all the dishs ");
+    Dishes.remove({})
+    .then((resp) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(resp);
+    },(err) => next(err))
+    .catch((err) => next(err));
 });
 
 dishrouter.route('/:dishId')
 .get((req,res,next)=>{
-    res.end("will send all the dishes to you!" + req.params.dishId);
+    Dishes.findById(req.params.dishId)
+    .then((dishes) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dishes);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 .post((req,res,next)=>{
     res.end("not supported");
 })
 .put((req,res,next)=>{
-    res.statusCode = 403;   //means operation is not suported  
-    res.write("will update the dish: " + req.params.dishId);
-    res.end('will update the dish: ' + req.body.name + "with details" + req.body.description);
+    Dishes.findByIdAndUpdate(req.params.dishId, {
+        $set: req.body
+    }, {new: true})
+    .then((dishes) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dishes);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 })
 .delete((req,res,next)=>{
-    res.end("deleting the dish: " + req.params.dishId);
+    Dishes.findByIdAndRemove(req.params.dishId)
+    .then((dishes) => {
+        res.statusCode = 200;
+        res.setHeader('Content-Type', 'application/json');
+        res.json(dishes);
+    }, (err) => next(err))
+    .catch((err) => next(err));
 });
 
 module.exports = dishrouter;
