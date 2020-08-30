@@ -13,6 +13,8 @@ var promoRouter = require('./routes/promoRouter');
 const mongoose = require('mongoose');
 
 const Dishes = require('./models/dishes');
+const Promotions = require('./models/promotions');
+const Leaders = require('./models/leaders');
 
 const url = 'mongodb://localhost:27017/conFusion';
 const connect = mongoose.connect(url);
@@ -31,7 +33,11 @@ app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+//every thing that come after this,all the middleware that is mounted and comes after this particular point.will have to go through the authorization pharse before that is the middleware can access
+
+
+
+app.use(express.static(path.join(__dirname, 'public')));//enable us to serve static data from the public folder
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
