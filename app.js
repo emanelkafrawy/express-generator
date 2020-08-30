@@ -35,7 +35,36 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 //every thing that come after this,all the middleware that is mounted and comes after this particular point.will have to go through the authorization pharse before that is the middleware can access
 
+function auth(req, res, next) {
+  console.log(req.headers);
 
+  var authHeader = req.headers.authorization;
+
+  if(!authHeader) { //null
+    var err = new Error('you are not authonticated');
+
+    res.setHeader('www-Authenticate', 'Basic');
+    err.status = 401;
+    return next(err);
+  }
+
+  var auth = new Buffer(authHeader.split(' ')[1], 'base64').toString().split(':');
+
+  var username = auth[0];
+  var password = auth[1];
+
+  if (username === 'admin' && password ==='password') {
+    next();
+  } 
+  else {
+    var err = new Error('you are not authonticated');
+
+    res.setHeader('www-Authenticate', 'Basic');
+    err.status = 401;
+    return next(err);
+  }
+}
+app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));//enable us to serve static data from the public folder
 
