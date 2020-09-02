@@ -32,37 +32,52 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use(cookieParser('12345-67890-09876-54321'));//secret key
 //every thing that come after this,all the middleware that is mounted and comes after this particular point.will have to go through the authorization pharse before that is the middleware can access
 
 function auth(req, res, next) {
-  console.log(req.headers);
+  console.log(req.signedCookies);
 
-  var authHeader = req.headers.authorization;
+  if(!req.signedCookies.user) { //اليوزر مش عامل كوكي
+    var authHeader = req.headers.authorization;
 
-  if(!authHeader) { //null
-    var err = new Error('you are not authonticated');
-
-    res.setHeader('www-Authenticate', 'Basic');
-    err.status = 401;
-    return next(err);
+    if(!authHeader) { //null
+      var err = new Error('you are not authonticated');
+  
+      res.setHeader('www-Authenticate', 'Basic');
+      err.status = 401;
+      return next(err);
+    }
+  
+    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+  
+    var username = auth[0];
+    var password = auth[1];
+  
+    if (username === 'admin' && password ==='password') {
+      res.cookie('user', 'admin', {signed: true})
+      next();
+    } 
+    else {
+      var err = new Error('you are not authonticated');
+  
+      res.setHeader('www-Authenticate', 'Basic');
+      err.status = 401;
+      return next(err);
+    }
+  } else {
+    if(req.signedCookies.user === 'admin') {
+      next(); //allow request to pass
+    } 
+    else {
+      var err = new Error('you are not authonticated');
+  
+      res.setHeader('www-Authenticate', 'Basic');
+      err.status = 401;
+      return next(err);
+    }
   }
 
-  var auth = new Buffer(authHeader.split(' ')[1], 'base64').toString().split(':');
-
-  var username = auth[0];
-  var password = auth[1];
-
-  if (username === 'admin' && password ==='password') {
-    next();
-  } 
-  else {
-    var err = new Error('you are not authonticated');
-
-    res.setHeader('www-Authenticate', 'Basic');
-    err.status = 401;
-    return next(err);
-  }
 }
 app.use(auth);
 
