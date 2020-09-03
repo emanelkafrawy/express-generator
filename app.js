@@ -3,9 +3,12 @@ var express = require('express');
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
+var session = require('express-session');
+var FileStore = require('session-file-store')(session);
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
+
 var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter');
 var promoRouter = require('./routes/promoRouter');
@@ -32,48 +35,35 @@ app.set('view engine', 'jade');
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser('12345-67890-09876-54321'));//secret key
+//app.use(cookieParser('12345-67890-09876-54321'));//secret key
 //every thing that come after this,all the middleware that is mounted and comes after this particular point.will have to go through the authorization pharse before that is the middleware can access
 
+app.use(session({
+  name: 'session-id',
+  secret: '12345-67890-09876-54321',
+  saveUninitialized: false,
+  resave: false,
+  store: new FileStore()
+}));
+
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
 function auth(req, res, next) {
-  console.log(req.signedCookies);
+  console.log(req.session);
 
-  if(!req.signedCookies.user) { //اليوزر مش عامل كوكي
-    var authHeader = req.headers.authorization;
-
-    if(!authHeader) { //null
-      var err = new Error('you are not authonticated');
-  
-      res.setHeader('www-Authenticate', 'Basic');
-      err.status = 401;
-      return next(err);
-    }
-  
-    var auth = new Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
-  
-    var username = auth[0];
-    var password = auth[1];
-  
-    if (username === 'admin' && password ==='password') {
-      res.cookie('user', 'admin', {signed: true})
-      next();
-    } 
-    else {
-      var err = new Error('you are not authonticated');
-  
-      res.setHeader('www-Authenticate', 'Basic');
-      err.status = 401;
-      return next(err);
-    }
-  } else {
-    if(req.signedCookies.user === 'admin') {
+  if(!req.session.user) { //اليوزر مش عامل كوكي
+    var err = new Error('you are not authonticated');
+    err.status = 401;
+    return next(err);  
+  }
+  else {
+    if(req.session.user === 'authenticated') {
       next(); //allow request to pass
     } 
     else {
       var err = new Error('you are not authonticated');
-  
-      res.setHeader('www-Authenticate', 'Basic');
-      err.status = 401;
+      err.status = 403;
       return next(err);
     }
   }
@@ -83,8 +73,7 @@ app.use(auth);
 
 app.use(express.static(path.join(__dirname, 'public')));//enable us to serve static data from the public folder
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+
 app.use('/dishes', dishRouter);
 app.use('/leaders', leaderRouter);
 app.use('/promotions', promoRouter);
