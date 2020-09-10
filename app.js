@@ -7,6 +7,7 @@ var session = require('express-session');
 var FileStore = require('session-file-store')(session);
 var passport = require('passport');
 var authenticate = require('./authenticate');
+var config = require('./config');
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
@@ -21,8 +22,10 @@ const Dishes = require('./models/dishes');
 const Promotions = require('./models/promotions');
 const Leaders = require('./models/leaders');
 
-const url = 'mongodb://localhost:27017/conFusion';
-const connect = mongoose.connect(url);
+const url = config.mongoUrl;
+const connect = mongoose.connect(url, {
+  useMongoClient:true
+});
 
 connect.then((db) => {
     console.log("Connected correctly to server");
@@ -40,37 +43,13 @@ app.use(express.urlencoded({ extended: false }));
 //app.use(cookieParser('12345-67890-09876-54321'));//secret key
 //every thing that come after this,all the middleware that is mounted and comes after this particular point.will have to go through the authorization pharse before that is the middleware can access
 
-app.use(session({
-  name: 'session-id',
-  secret: '12345-67890-09876-54321',
-  saveUninitialized: false,
-  resave: false,
-  store: new FileStore()
-}));
-
 //serrialize then store in the session
 app.use(passport.initialize()); 
-app.use(passport.session());
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
-function auth(req, res, next) {
-  if(!req.user) { //اليوزر مش عامل كوكي
-    var err = new Error('you are not authonticated');
-    err.status = 403;
-    return next(err);  
-  }
-  else {
-    
-    next(); //allow request to pass
-
-    }
-
-}
-app.use(auth);
-
-app.use(express.static(path.join(__dirname, 'public')));//enable us to serve static data from the public folder
+app.use(express.static(path.join(__dirname, 'public')));//enable us to serve static data from the public folder +leave the public folder open for any body to access
 
 
 app.use('/dishes', dishRouter);
