@@ -11,11 +11,10 @@ var User = new Schema({
         type: String,
         default: ''
     },
-    admin: {
+    admin:   {
         type: Boolean,
         default: false
     }
-
 });
 
 User.plugin(passportLocalMongoose);//use them +hashed password
