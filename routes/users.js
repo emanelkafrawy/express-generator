@@ -52,7 +52,7 @@ router.post('/signup', (req, res, next) => {
   });
 });
 */
-router.post('/signup', (req, res, next) => {
+router.post('/signup', (req, res,next) => {
   User.register(new User({username: req.body.username}), 
     req.body.password, (err, user) => {
     if(err) {
@@ -87,9 +87,10 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 
   var token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
-  res.setHeader('ContentType', 'application/json');
-  res.json({succes: true,token: token, status: 'you are login Successfull !'});
+  res.setHeader('Content-Type', 'application/json');
+  res.json({success: true, token: token, status: 'You are successfully logged in!'});
 });
+
 
 router.get('/logout', (req, res) => {
   if (req.session) { //e=session exist
