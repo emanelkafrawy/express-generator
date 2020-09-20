@@ -3,13 +3,14 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const User = require('../models/user');
 var passport = require('passport');
+const cors = require('./cors');
 
 var authenticate = require('../authenticate');
 var router = express.Router();
 router.use(bodyParser.json());
 
 /* GET users listing. */
-router.get('/',authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
+router.get('/',cors.cors, authenticate.verifyUser, authenticate.verifyAdmin, function(req, res, next) {
   User.find({}, (err,users) => {
     if(err) {
       return next(err);
@@ -52,7 +53,7 @@ router.post('/signup', (req, res, next) => {
   });
 });
 */
-router.post('/signup', (req, res,next) => {
+router.post('/signup',cors.corsWithOptions, (req, res,next) => {
   User.register(new User({username: req.body.username}), 
     req.body.password, (err, user) => {
     if(err) {
@@ -83,7 +84,7 @@ router.post('/signup', (req, res,next) => {
 });
 
 //login
-router.post('/login', passport.authenticate('local'), (req, res) => {
+router.post('/login',cors.corsWithOptions, passport.authenticate('local'), (req, res) => {
 
   var token = authenticate.getToken({_id: req.user._id});
   res.statusCode = 200;
@@ -92,7 +93,7 @@ router.post('/login', passport.authenticate('local'), (req, res) => {
 });
 
 
-router.get('/logout', (req, res) => {
+router.get('/logout',cors.corsWithOptions, (req, res) => {
   if (req.session) { //e=session exist
     req.session.destroy();
     res.clearCookie('session-id');
